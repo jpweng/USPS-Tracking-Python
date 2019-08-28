@@ -109,20 +109,20 @@ class TrackingContext:
 
         track_xml = self.usps_track(self.trackingChunk)
         track_result = ElementTree.ElementTree(ElementTree.fromstring(track_xml))
-        for result in track_result.findall('Description'):
-            print(result.text)
+
+        trackingData = []
+
         for number, result in enumerate(track_result.findall('.//TrackInfo')):
             summary = result.find('TrackSummary')
             if summary is None:
                 continue
-            print (self.trackingChunk[number])
-            print('%s' % summary.text)
-            details = result.findall('TrackDetail')
+
+            details = result.findall ('TrackDetail')
+            detailTexts = ""
             for number_2, detailed_result in enumerate(details):
-                if number_2+1 == len(details):
-                    print('  └ %s' % detailed_result.text)
-                else:
-                    print('  ├ %s' % detailed_result.text)
+                detailTexts += detailed_result.text + "\r\n"
+            data = (str (self.trackingChunk[number]), summary.text, detailTexts)
+            trackingData.append (data)      
 
 class TrackingRequestsGeneration:
     def __init__ (self, trackingContext = TrackingContext ()):
