@@ -61,7 +61,6 @@ class TrackingProcessing:
         cur = self.connection.cursor ()
         cur.execute ('BEGIN TRANSACTION')
         for data in trackingData:
-            #print (data[0])
             if self.dataCondition (data):
                 cur.execute (' INSERT OR IGNORE INTO trackings (trackingNumber, summary, details) VALUES (?, ?, ?)', data)
         cur.execute ('COMMIT')
@@ -80,11 +79,10 @@ class TrackingProcessing:
             self.connection.close ()
 
 class TrackingContext:
-    def __init__ (self, chunkSize = 100):#, trackingProcessing = TrackingProcessing ()):
+    def __init__ (self, chunkSize = 100):
         assert 0 < chunkSize < 1000
         self.trackingChunk = []
         self.chunkSize = chunkSize
-        #self.trackingProcessing = trackingProcessing
 
     def usps_track (self, numbers_list):
         xml = "<TrackRequest USERID=\"%s\">" % api_key
@@ -144,7 +142,6 @@ class TrackingContext:
             trackingData.append (data)
 
         self.addTrackingDataToQueue (trackingData)
-        #self.trackingProcessing.process (trackingData)
 
 class CountThreads:
     def nThreads (self):
