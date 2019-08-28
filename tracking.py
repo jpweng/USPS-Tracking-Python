@@ -46,6 +46,38 @@ def usps_track(numbers_list):
     request_obj.close()
     return result
 
+class TrackingContext:
+    def pattern (self):
+        with open(os.path.join(path, "config.json")) as config_file:
+            config = json.load(config_file)
+            tracking_number_pattern = config.get("tracking_number_pattern")
+
+            if not tracking_number_pattern:
+                sys.exit("Error: Could not find tracking_number_pattern in config.json!")
+
+            return tracking_number_pattern
+        sys.exit("Error: Failed to open config.json!")
+
+    def process (self, trackingNumer):
+        raise NotImplementedError
+
+class TrackingRequestsGeneration:
+    def __init__ (self, trackingContext = TrackingContext ()):
+        self.trackingContext = trackingContext
+
+    def preAndSuffixTuple (self):
+        tracking_number_pattern = self.trackingContext.pattern ()
+        prefix = tracking_number_pattern[:tracking_number_pattern.find ('.')]
+        suffix = tracking_number_pattern[tracking_number_pattern.rfind ('.') + 1:]
+        return prefix, suffix
+
+    def requestAll (self):
+        prefix, suffix = self.preAndSuffixTuple ()
+        count = self.trackingContext.pattern ().count ('.')
+        for i in range (10 ** count):
+            trackingNumber = prefix + '0' * (count - len (str (i))) + str (i) + suffix
+            self.trackingContext.process (trackingNumber)
+    
 if __name__ == "__main__":
     args = parser.parse_args()
     if args.tracking_numbers: # Arguments support multiple tracking numbers
