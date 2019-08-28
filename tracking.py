@@ -8,6 +8,8 @@
 from urllib import request, parse
 from sys import argv
 from xml.etree import ElementTree
+import sqlite3
+from sqlite3 import Error
 import argparse, json, sys, os
 
 USPS_API_URL = "http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2"
@@ -21,11 +23,53 @@ with open(os.path.join(path, "config.json")) as config_file:
 if not api_key:
     sys.exit("Error: Could not find USPS API key in config.json!")
 
+class TrackingProcessing:
+    def __init__ (self):
+        self.createDb ()
+
+    def createDb (self):
+        with open (os.path.join(path, "config.json")) as config_file:
+            config = json.load(config_file)
+            dbFolder = config.get("db_folder")
+            if not os.path.isdir (dbFolder):
+                os.mkdir (dbFolder)
+            self.filename = os.path.join (dbFolder, "USPSTracking.db")
+            self.connection = None
+            try:
+                self.connection = sqlite3.connect (self.filename)
+                self.createTable ()
+            except Error as e:
+                print (e)
+
+    def createTable (self):
+        try:
+            sql_create_table = """ CREATE TABLE IF NOT EXISTS trackings (
+                               trackingNumber text NOT NULL PRIMARY KEY,
+                               summary text NOT NULL,
+                               details text NOT NULL
+                            ); """
+            c = self.connection.cursor()
+            c.execute (sql_create_table)
+        except Error as e:
+            print (e)
+    
+    def process (self, trackingData): # list of tuples (trackingNumber, summary, details):
+        cur = self.connection.cursor ()
+        cur.execute ('BEGIN TRANSACTION')
+        for data in trackingData:
+            cur.execute (' INSERT OR IGNORE INTO trackings (trackingNumber, summary, details) VALUES (?, ?, ?)', data)
+        cur.execute ('COMMIT')
+
+    def __del__ (self):
+        if self.connection:
+            self.connection.close ()
+
 class TrackingContext:
-    def __init__ (self, chunkSize = 10):
-        assert chunkSize > 0
+    def __init__ (self, chunkSize = 100, trackingProcessing = TrackingProcessing ()):
+        assert 0 < chunkSize < 1000
         self.trackingChunk = []
         self.chunkSize = chunkSize
+        self.trackingProcessing = trackingProcessing
 
     def usps_track (self, numbers_list):
         xml = "<TrackRequest USERID=\"%s\">" % api_key
