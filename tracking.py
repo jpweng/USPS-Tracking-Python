@@ -59,7 +59,24 @@ class TrackingContext:
         sys.exit("Error: Failed to open config.json!")
 
     def process (self, trackingNumer):
-        raise NotImplementedError
+        track_xml = usps_track([trackingNumer])
+        track_result = ElementTree.ElementTree(ElementTree.fromstring(track_xml))
+        for result in track_result.findall('Description'):
+            print(result.text)
+        for number, result in enumerate(track_result.findall('.//TrackInfo')):
+            summary = result.find('TrackSummary')
+            if summary is None:
+                print('Error in XML!')
+                print(track_xml)
+            else:
+                print('%s' % summary.text)
+                #if args.show_tracking_extended:
+                details = result.findall('TrackDetail')
+                for number_2, detailed_result in enumerate(details):
+                    if number_2+1 == len(details):
+                        print('  └ %s' % detailed_result.text)
+                    else:
+                        print('  ├ %s' % detailed_result.text)
 
 class TrackingRequestsGeneration:
     def __init__ (self, trackingContext = TrackingContext ()):
@@ -79,49 +96,4 @@ class TrackingRequestsGeneration:
             self.trackingContext.process (trackingNumber)
     
 if __name__ == "__main__":
-    args = parser.parse_args()
-    if args.tracking_numbers: # Arguments support multiple tracking numbers
-        track_ids = args.tracking_numbers
-        #track_ids = argv[1:]
-    else:
-        #track_id = input() # User input supports only a single number
-        track_id = input('Enter tracking numbers separated by spaces: ') # User input supports multiple tracking numbers split with spaces
-        if len(track_id) < 1:
-            exit(0)
-        track_ids = track_id.split(' ')
-        #track_ids = [ track_id ]
-    real = []
-    for id in track_ids:
-        if id[0] != '#':
-            real.append(id)
-    track_ids = real
-    track_xml = usps_track(track_ids)
-#    print(track_xml)
-    track_result = ElementTree.ElementTree(ElementTree.fromstring(track_xml))
-    if not args.show_minimal:
-        print('OK!')
-    for result in track_result.findall('Description'):
-        print(result.text)
-#    for result in track_result.findall('.//TrackSummary'):
-#        print(result.text)
-    for number, result in enumerate(track_result.findall('.//TrackInfo')):
-        if args.show_tracking_number:
-            track_num = ' (%s)' % track_ids[number]
-        else:
-            track_num = ''
-        summary = result.find('TrackSummary')
-        if summary is None:
-            print('Error in XML!')
-            print(track_xml)
-        else:
-            if args.show_minimal:
-                print('%s' % summary.text)
-            else:
-                print('\nPackage #%d%s:\n %s' % (number+1,track_num,summary.text))
-            if args.show_tracking_extended:
-                details = result.findall('TrackDetail')
-                for number_2, detailed_result in enumerate(details):
-                    if number_2+1 == len(details):
-                        print('  └ %s' % detailed_result.text)
-                    else:
-                        print('  ├ %s' % detailed_result.text)
+    TrackingRequestsGeneration ().requestAll ()
