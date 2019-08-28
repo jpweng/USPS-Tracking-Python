@@ -1,5 +1,5 @@
 import unittest
-from tracking import TrackingContext, TrackingRequestsGeneration, TrackingProcessing
+from tracking import TrackingContext, TrackingRequestsGeneration, TrackingProcessing, CountThreads
 import sqlite3
 from sqlite3 import Error
 
@@ -16,10 +16,14 @@ class FakeTrackingContext (TrackingContext):
     def notifyEnd (self):
         pass
 
+class CountSingleThread (CountThreads):
+    def nThreads (self):
+        return 1
+
 class TestsTrackingRange (unittest.TestCase):
     def setUp(self):
         self.generated = []
-        self.trackingRange = TrackingRequestsGeneration (FakeTrackingContext (self.generated))
+        self.trackingRange = TrackingRequestsGeneration (trackingContextMap = lambda self = self: FakeTrackingContext (self.generated), countThreads = CountSingleThread ())
         
     def testPrefix (self):
         self.assertEqual ("EW00525141", self.trackingRange.preAndSuffixTuple ()[0])
