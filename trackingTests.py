@@ -12,6 +12,9 @@ class FakeTrackingContext (TrackingContext):
     def process (self, trackingNumer):
         self.generated.append (trackingNumer)
 
+    def notifyEnd (self):
+        pass
+
 class TestsTrackingRange (unittest.TestCase):
     def setUp(self):
         self.generated = []
