@@ -25,6 +25,7 @@ if not api_key:
     sys.exit("Error: Could not find USPS API key in config.json!")
 
 q = queue.Queue ()
+allResults = None
 
 class TrackingProcessing:
     def __init__ (self, dataCondition = lambda data : True):
@@ -67,13 +68,20 @@ class TrackingProcessing:
         cur.execute ('COMMIT')
 
     def consume (self):
-        global q
+        global q, allResults
         while True:
             if not q.empty ():
                 trackingData = q.get ()
                 if trackingData == 'stop':
+                    allResults = self.selectAll ()
                     return
                 self.process (trackingData)
+
+    def selectAll (self):
+        cur = self.connection.cursor ()
+        cur.execute ("SELECT * FROM trackings")
+        result = cur.fetchall ()
+        return result
 
     def __del__ (self):
         if self.connection:
@@ -205,6 +213,9 @@ class TrackingRequestsGeneration:
 
         endTime = time.time ()
         print ("Elapsed time: ", endTime - startTime)
+
+        for result in allResults:
+            print (result, '\r\n')
     
 if __name__ == "__main__":
     TrackingRequestsGeneration (dataCondition = lambda data : 'PHILADELPHIA' in data[2]).requestAll ()
