@@ -62,6 +62,7 @@ class TrackingProcessing:
         cur.execute ('BEGIN TRANSACTION')
         for data in trackingData:
             if self.dataCondition (data):
+                #print (data[2], '\r\n')
                 cur.execute (' INSERT OR IGNORE INTO trackings (trackingNumber, summary, details) VALUES (?, ?, ?)', data)
         cur.execute ('COMMIT')
 
@@ -150,9 +151,10 @@ class CountThreads:
             return config.get("numThreads")
 
 class TrackingRequestsGeneration:
-    def __init__ (self, trackingContextMap = lambda: TrackingContext (), countThreads = CountThreads ()):
+    def __init__ (self, trackingContextMap = lambda: TrackingContext (), countThreads = CountThreads (), dataCondition = lambda data : True):
         self.nThreads = countThreads.nThreads ()
         self.trackingContext = [trackingContextMap () for i in range (self.nThreads)]
+        self.dataCondition = dataCondition
 
     def preAndSuffixTuple (self):
         tracking_number_pattern = self.trackingContext[0].pattern ()
@@ -167,7 +169,7 @@ class TrackingRequestsGeneration:
         self.trackingContext[threadIndex].notifyEnd ()
 
     def consume (self):
-        trackingProcessing = TrackingProcessing ()
+        trackingProcessing = TrackingProcessing (self.dataCondition)
         trackingProcessing.consume ()
 
     def requestAll (self):
@@ -205,4 +207,4 @@ class TrackingRequestsGeneration:
         print ("Elapsed time: ", endTime - startTime)
     
 if __name__ == "__main__":
-    TrackingRequestsGeneration ().requestAll ()
+    TrackingRequestsGeneration (dataCondition = lambda data : 'PHILADELPHIA' in data[2]).requestAll ()
