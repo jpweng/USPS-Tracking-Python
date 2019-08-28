@@ -1,9 +1,11 @@
 # USPS-Tracking-Python
-Track your packages with the USPS Track Request API using Python 3
+Find all valid USPS tracking numbers using a USPS tracking number template (e.g. regular expression), and filter them to find my lost tracking number!
 
 IMPORTANT! You must provide your API key in config.json before use! Sign up at: https://www.usps.com/business/web-tools-apis/welcome.htm
 
 ## Usage
+
+TO EDIT
 
 You can track single/multiple shipment(s) by executing the program as follows:
 
