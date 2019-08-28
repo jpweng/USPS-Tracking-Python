@@ -24,8 +24,9 @@ if not api_key:
     sys.exit("Error: Could not find USPS API key in config.json!")
 
 class TrackingProcessing:
-    def __init__ (self):
+    def __init__ (self, dataCondition = lambda data : True):
         self.createDb ()
+        self.dataCondition = dataCondition
 
     def createDb (self):
         with open (os.path.join(path, "config.json")) as config_file:
@@ -57,7 +58,8 @@ class TrackingProcessing:
         cur = self.connection.cursor ()
         cur.execute ('BEGIN TRANSACTION')
         for data in trackingData:
-            cur.execute (' INSERT OR IGNORE INTO trackings (trackingNumber, summary, details) VALUES (?, ?, ?)', data)
+            if self.dataCondition (data):
+                cur.execute (' INSERT OR IGNORE INTO trackings (trackingNumber, summary, details) VALUES (?, ?, ?)', data)
         cur.execute ('COMMIT')
 
     def __del__ (self):
@@ -122,7 +124,9 @@ class TrackingContext:
             for number_2, detailed_result in enumerate(details):
                 detailTexts += detailed_result.text + "\r\n"
             data = (str (self.trackingChunk[number]), summary.text, detailTexts)
-            trackingData.append (data)      
+            trackingData.append (data)
+
+        self.trackingProcessing.process (trackingData)
 
 class TrackingRequestsGeneration:
     def __init__ (self, trackingContext = TrackingContext ()):

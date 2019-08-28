@@ -93,3 +93,14 @@ class TestsSqlite (unittest.TestCase):
         result = cur.fetchall ()
 
         self.assertEqual (len (result), 1)
+
+    def testConditionalInsert (self):
+        self.processing.dataCondition = lambda data: 'UTOPIA' in data[2]
+
+        self.processing.process (self.trackingData)
+        cur = self.processing.connection.cursor ()
+        cur.execute ("SELECT * FROM trackings")
+        result = cur.fetchall ()
+        
+        self.assertEqual (len (result), 1)
+        self.assertIn ('UTOPIA', result[0][2])
