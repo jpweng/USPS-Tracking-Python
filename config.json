@@ -1,6 +1,1 @@
-{
-    "api_key" : "548BENTL4293",
-    "tracking_number_pattern" : "EW.........US",
-    "db_folder" : "C:/USPSTrackings/",
-    "numThreads" : 64
-}
+{"api_key" : ""}
